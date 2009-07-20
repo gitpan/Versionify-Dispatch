@@ -1,4 +1,4 @@
-use Test::More tests => 12;
+use Test::More tests => 13;
 
 BEGIN {
 use_ok( 'Versionify::Dispatch' );
@@ -13,11 +13,11 @@ Readonly my $RETURN_VAL_2 => 'hi';
 Readonly my $RETURN_VAL_3 => 3.14159;
 
 sub func {
-	return $RETURN_VAL_1;
+    return $RETURN_VAL_1;
 }
 
 my $func_ref = sub {
-	return $RETURN_VAL_2;
+    return $RETURN_VAL_2;
 };
 
 is(func(), $RETURN_VAL_1, 'Sample subroutine works');
@@ -38,16 +38,20 @@ $dispatcher->set_function({1.1 => \&func});
 is($dispatcher->get_function(1.6)->(), $RETURN_VAL_1, 'set_function has completely replaced the previously stored lookups');
 
 $dispatcher->register(
-	1.16 => sub {return $RETURN_VAL_3},
-	1.23 => $func_ref,
+    1.16 => sub {return $RETURN_VAL_3},
+    1.23 => $func_ref,
 );
 is($dispatcher->get_function(1.16)->(), $RETURN_VAL_3, 'Dispatcher registers new function and uses them correctly');
 $dispatcher->set_default_version(1.25);
 is($dispatcher->get_function()->(), $RETURN_VAL_2, 'Dispatcher registers new function and uses them correctly (with fallback from default)');
 is($dispatcher->get_function(1.5)->(), $RETURN_VAL_1, 'Newly registered functions do not interfere with previously registered functions');
 
+$dispatcher->set_function({});
+eval {$dispatcher->get_function()};
+like($@, qr/^No valid functions stored/, 'set_function removes the old registered functions');
+
 my $new_dispatcher = Versionify::Dispatch->new();
 $new_dispatcher->register(
-	1.0 => $func_ref,
+    1.0 => $func_ref,
 );
 is($new_dispatcher->get_function()->(), $RETURN_VAL_2, 'Dispatcher registers new function and uses them correctly when no functions had been set before first register() call');
